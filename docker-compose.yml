@@ -43,14 +43,14 @@ services:
       - "${MYSQL_PORT:-3306}"
     volumes:
       - ./volumes/db:/var/lib/mysql
-    labels:
-        - "traefik.enable=true"
-        - "traefik.http.routers.${CONTAINER_NAME}-db.entrypoints=${ENTRYPOINT_DB}"
-        - "traefik.http.routers.${CONTAINER_NAME}-db.rule=Host(`db.${DOMAIN}`)"
-        - "traefik.http.routers.${CONTAINER_NAME}-db.service=${CONTAINER_NAME}-db"
-        - "traefik.http.services.${CONTAINER_NAME}-db.loadbalancer.server.port=${MYSQL_PORT:-3306}"
-        - "traefik.http.routers.${CONTAINER_NAME}-db.tls=${DB_TLS:-false}"
-        - "traefik.http.routers.${CONTAINER_NAME}-db.tls.certresolver=${CERT_RESOLVER:-letsencrypt}"
+        #labels:
+      #        - "traefik.enable=true"
+      # - "traefik.http.routers.${CONTAINER_NAME}-db.entrypoints=${ENTRYPOINT_DB}"
+      # - "traefik.http.routers.${CONTAINER_NAME}-db.rule=Host(`db.${DOMAIN}`)"
+      #  - "traefik.http.routers.${CONTAINER_NAME}-db.service=${CONTAINER_NAME}-db"
+      #  - "traefik.http.services.${CONTAINER_NAME}-db.loadbalancer.server.port=${MYSQL_PORT:-3306}"
+      #  - "traefik.http.routers.${CONTAINER_NAME}-db.tls=${DB_TLS:-false}"
+      #  - "traefik.http.routers.${CONTAINER_NAME}-db.tls.certresolver=${CERT_RESOLVER:-letsencrypt}"
     networks:
       - proxy
 
