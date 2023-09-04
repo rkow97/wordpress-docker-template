@@ -1,0 +1,79 @@
+version: '3.3'
+
+services:
+  web:
+    container_name: ${CONTAINER_NAME}
+    image: wordpress
+    restart: always
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    expose:
+      - "${WEB_PORT:-80}"
+    volumes:
+      - ./volumes/wordpress:/var/www/html
+    links:
+        - db
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: root
+      WORDPRESS_DB_PASSWORD: "${MYSQL_PASSWORD:-l3tm31n}"
+      WORDPRESS_DB_NAME: wp
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${CONTAINER_NAME}.entrypoints=${ENTRYPOINT}"
+      - "traefik.http.routers.${CONTAINER_NAME}.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.${CONTAINER_NAME}.service=${CONTAINER_NAME}"
+      - "traefik.http.services.${CONTAINER_NAME}.loadbalancer.server.port=${WEB_PORT:-80}"
+      - "traefik.http.routers.${CONTAINER_NAME}.tls=${TLS:-false}"
+      - "traefik.http.routers.${CONTAINER_NAME}.tls.certresolver=${CERT_RESOLVER:-letsencrypt}"
+    networks:
+      - proxy
+
+  db:
+    container_name: "${CONTAINER_NAME}-db"
+    image: mysql
+    command: --default-authentication-plugin=mysql_native_password --secure-file-priv=''
+    restart: always
+    environment:
+      MYSQL_DATABASE: wp
+      MYSQL_ROOT_PASSWORD: "${MYSQL_PASSWORD:-l3tm31n}"
+        #      MYSQL_USER: dbuser
+        #      MYSQL_PASSWORD: "${MYSQL_PASSWORD:-l3tm31n}" 
+    expose:
+      - "${MYSQL_PORT:-3306}"
+    volumes:
+      - ./volumes/db:/var/lib/mysql
+    labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.${CONTAINER_NAME}-db.entrypoints=${ENTRYPOINT_DB}"
+        - "traefik.http.routers.${CONTAINER_NAME}-db.rule=Host(`db.${DOMAIN}`)"
+        - "traefik.http.routers.${CONTAINER_NAME}-db.service=${CONTAINER_NAME}-db"
+        - "traefik.http.services.${CONTAINER_NAME}-db.loadbalancer.server.port=${MYSQL_PORT:-3306}"
+        - "traefik.http.routers.${CONTAINER_NAME}-db.tls=${DB_TLS:-false}"
+        - "traefik.http.routers.${CONTAINER_NAME}-db.tls.certresolver=${CERT_RESOLVER:-letsencrypt}"
+    networks:
+      - proxy
+
+  phpmyadmin:
+    container_name: "${CONTAINER_NAME}-pma"
+    image: phpmyadmin/phpmyadmin:latest
+    expose:
+    -  "${PHPMYADMIN_PORT:-80}"
+    depends_on:
+    - db
+    links:
+    - db
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${CONTAINER_NAME}-pma.entrypoints=${ENTRYPOINT}"
+      - "traefik.http.routers.${CONTAINER_NAME}-pma.rule=Host(`pma.${DOMAIN}`)"
+      - "traefik.http.routers.${CONTAINER_NAME}-pma.service=${CONTAINER_NAME}-pma"
+      - "traefik.http.services.${CONTAINER_NAME}-pma.loadbalancer.server.port=${PHPMYADMIN_PORT:-80}"
+      - "traefik.http.routers.${CONTAINER_NAME}-pma.tls=${TLS:-false}"
+      - "traefik.http.routers.${CONTAINER_NAME}-pma.tls.certresolver=${CERT_RESOLVER:-letsencrypt}"
+    networks:
+        - proxy
+
+networks:
+    proxy:
+        external: true
